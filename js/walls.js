@@ -19,6 +19,14 @@ export class WallSystem {
         this.spawnRadius = 20; // where walls spawn
         this.despawnRadius = 1.2; // where walls get removed
         this.wallThickness = 0.4;
+
+        // Shared outline material
+        this.outlineMat = new THREE.LineBasicMaterial({
+            color: 0xffffff,
+            transparent: true,
+            opacity: 0.7,
+            linewidth: 1
+        });
     }
 
     /**
@@ -80,14 +88,55 @@ export class WallSystem {
         shape.closePath();
 
         const geometry = new THREE.ShapeGeometry(shape);
+        // Dim color so walls stay below bloom threshold
+        const dimColor = new THREE.Color(color).multiplyScalar(0.35);
         const material = new THREE.MeshBasicMaterial({
-            color,
+            color: dimColor,
             transparent: true,
             opacity: 0.9,
             side: THREE.DoubleSide
         });
 
-        return new THREE.Mesh(geometry, material);
+        const mesh = new THREE.Mesh(geometry, material);
+
+        // White outline
+        const outlinePoints = this._getOutlinePoints(angleStart, angleEnd, radius, thickness);
+        const outlineGeo = new THREE.BufferGeometry().setFromPoints(outlinePoints);
+        const outline = new THREE.LineLoop(outlineGeo, this.outlineMat);
+        outline.position.z = 0.01;
+        mesh.add(outline);
+        mesh.userData.outline = outline;
+
+        return mesh;
+    }
+
+    _getOutlinePoints(angleStart, angleEnd, radius, thickness) {
+        const segments = 8;
+        const points = [];
+
+        // Outer arc
+        for (let i = 0; i <= segments; i++) {
+            const t = i / segments;
+            const angle = angleStart + (angleEnd - angleStart) * t;
+            points.push(new THREE.Vector3(
+                Math.cos(angle) * (radius + thickness / 2),
+                Math.sin(angle) * (radius + thickness / 2),
+                0
+            ));
+        }
+
+        // Inner arc (reverse)
+        for (let i = segments; i >= 0; i--) {
+            const t = i / segments;
+            const angle = angleStart + (angleEnd - angleStart) * t;
+            points.push(new THREE.Vector3(
+                Math.cos(angle) * (radius - thickness / 2),
+                Math.sin(angle) * (radius - thickness / 2),
+                0
+            ));
+        }
+
+        return points;
     }
 
     update(dt, audioData) {
@@ -141,10 +190,21 @@ export class WallSystem {
 
         shape.closePath();
         wall.geometry = new THREE.ShapeGeometry(shape);
+
+        // Update outline
+        const outline = wall.userData.outline;
+        if (outline) {
+            outline.geometry.dispose();
+            const outlinePoints = this._getOutlinePoints(data.angleStart, data.angleEnd, radius, thickness);
+            outline.geometry = new THREE.BufferGeometry().setFromPoints(outlinePoints);
+        }
     }
 
     _removeWall(index) {
         const wall = this.walls[index];
+        if (wall.userData.outline) {
+            wall.userData.outline.geometry.dispose();
+        }
         this.wallGroup.remove(wall);
         wall.geometry.dispose();
         wall.material.dispose();
@@ -172,13 +232,18 @@ export class WallSystem {
     }
 
     setColor(color) {
+        // Dim color so walls don't bloom
+        const dimColor = new THREE.Color(color).multiplyScalar(0.35);
         for (const wall of this.walls) {
-            wall.material.color.set(color);
+            wall.material.color.copy(dimColor);
         }
     }
 
     clear() {
         for (const wall of this.walls) {
+            if (wall.userData.outline) {
+                wall.userData.outline.geometry.dispose();
+            }
             this.wallGroup.remove(wall);
             wall.geometry.dispose();
             wall.material.dispose();
