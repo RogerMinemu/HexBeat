@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HexBeat — Music Hexagon Game</title>
+    <meta name="description"
+        content="An Open Hexagon-style game that generates levels from your own music. Upload MP3/OGG and survive the beat!">
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+</head>
+
+<body>
+    <div id="game-container">
+        <canvas id="game-canvas"></canvas>
+
+        <!-- MENU SCREEN -->
+        <div id="menu-screen" class="overlay active">
+            <div class="menu-content">
+                <h1 class="game-title">
+                    <span class="title-hex">HEX</span><span class="title-beat">BEAT</span>
+                </h1>
+                <p class="subtitle">Sube tu música. Sobrevive al ritmo.</p>
+
+                <div class="upload-zone" id="upload-zone">
+                    <div class="upload-icon">
+                        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="1.5">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                            <polyline points="17 8 12 3 7 8" />
+                            <line x1="12" y1="3" x2="12" y2="15" />
+                        </svg>
+                    </div>
+                    <p class="upload-text">Arrastra un archivo aquí</p>
+                    <p class="upload-subtext">o haz clic para seleccionar</p>
+                    <p class="upload-formats">MP3 / OGG</p>
+                    <input type="file" id="audio-input" accept=".mp3,.ogg,audio/mpeg,audio/ogg" hidden>
+                </div>
+
+                <div class="controls-info">
+                    <div class="control-key">
+                        <kbd>←</kbd> <kbd>→</kbd>
+                        <span>o</span>
+                        <kbd>A</kbd> <kbd>D</kbd>
+                    </div>
+                    <p>Gira para esquivar los muros</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- LOADING SCREEN -->
+        <div id="loading-screen" class="overlay">
+            <div class="loading-content">
+                <h2 class="loading-title">Analizando tu música...</h2>
+                <div class="loading-bar-container">
+                    <div class="loading-bar" id="loading-bar"></div>
+                </div>
+                <p class="loading-info" id="loading-info">Decodificando audio...</p>
+            </div>
+        </div>
+
+        <!-- HUD -->
+        <div id="hud" class="overlay">
+            <div class="hud-top">
+                <div class="hud-time" id="hud-time">0.00</div>
+                <div class="hud-bpm" id="hud-bpm">-- BPM</div>
+            </div>
+        </div>
+
+        <!-- GAME OVER SCREEN -->
+        <div id="gameover-screen" class="overlay">
+            <div class="gameover-content">
+                <h2 class="gameover-title">GAME OVER</h2>
+                <div class="gameover-time">
+                    <span class="gameover-label">Tiempo</span>
+                    <span class="gameover-value" id="gameover-time">0.00s</span>
+                </div>
+                <div class="gameover-buttons">
+                    <button class="btn btn-continue" id="btn-continue">
+                        <span>CONTINUAR (W)</span>
+                    </button>
+                    <button class="btn btn-primary" id="btn-retry">
+                        <span>REINTENTAR</span>
+                    </button>
+                    <button class="btn btn-secondary" id="btn-new-song">
+                        <span>NUEVA CANCIÓN</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+        }
+    }
+    </script>
+    <script type="module" src="js/main.js"></script>
+</body>
+
+</html>
