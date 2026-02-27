@@ -35,6 +35,11 @@ export class Game {
         this.lastTimestamp = 0;
         this.isRunning = false;
 
+        // High Score Tracking
+        this.currentSongId = null;
+        this.bestTime = 0;
+        this.isNewBest = false;
+
         // World rotation (Open Hexagon signature effect)
         this.worldRotation = 0;
         this.worldRotationSpeed = 0.3;
@@ -178,7 +183,7 @@ export class Game {
             }
 
             // Update HUD
-            this.ui.updateHUD(this.survivalTime, this.audio.bpm);
+            this.ui.updateHUD(this.survivalTime, this.audio.bpm, this.bestTime);
 
             // Update renderer visual effects
             this.renderer.update(dt, this.gameTime, audioData, this.audio.freqData, this.audio.timeData);
@@ -231,6 +236,15 @@ export class Game {
 
         this.audio.stop();
 
+        // High score check
+        if (this.survivalTime > this.bestTime) {
+            this.bestTime = this.survivalTime;
+            this.isNewBest = true;
+            if (this.currentSongId) {
+                localStorage.setItem(`hexbeat_best_${this.currentSongId}`, this.bestTime.toString());
+            }
+        }
+
         // Explosion at player position
         const px = this.player.mesh.position.x;
         const py = this.player.mesh.position.y;
@@ -244,7 +258,7 @@ export class Game {
 
         // Show game over after brief delay
         setTimeout(() => {
-            this.ui.showGameOver(this.survivalTime);
+            this.ui.showGameOver(this.survivalTime, this.bestTime, this.isNewBest);
         }, 800);
     }
 
@@ -252,6 +266,15 @@ export class Game {
         // Player survived the whole song!
         this.state = GameState.GAME_OVER;
         this.audio.stop();
+
+        // High score check
+        if (this.survivalTime > this.bestTime) {
+            this.bestTime = this.survivalTime;
+            this.isNewBest = true;
+            if (this.currentSongId) {
+                localStorage.setItem(`hexbeat_best_${this.currentSongId}`, this.bestTime.toString());
+            }
+        }
 
         // Celebratory particles
         for (let i = 0; i < 5; i++) {
@@ -261,13 +284,18 @@ export class Game {
         }
 
         setTimeout(() => {
-            this.ui.showGameOver(this.survivalTime);
+            this.ui.showGameOver(this.survivalTime, this.bestTime, this.isNewBest);
         }, 1200);
     }
 
     async _onFileSelected(file) {
         this.state = GameState.ANALYZING;
         this.ui.showScreen('loading');
+
+        // Setup high score tracking for this song
+        this.currentSongId = file.name;
+        this.bestTime = parseFloat(localStorage.getItem(`hexbeat_best_${this.currentSongId}`)) || 0;
+        this.isNewBest = false;
 
         try {
             await this.audio.loadFile(file, (msg, pct) => {
@@ -314,6 +342,16 @@ export class Game {
         this.state = GameState.PLAYING;
         this.gameTime = 0;
         this.survivalTime = 0;
+        this.isNewBest = false;
+
+        // Recalculate best time just in case it was updated in a previous run
+        if (this.currentSongId) {
+            this.bestTime = Math.max(
+                this.bestTime,
+                parseFloat(localStorage.getItem(`hexbeat_best_${this.currentSongId}`)) || 0
+            );
+        }
+
         this.lastBeatIndex = -1;
         this.beatCooldown = 0;
         this.worldRotation = 0;

@@ -47,6 +47,28 @@ body {
     height: 100%;
 }
 
+.hud-top-right {
+    position: absolute;
+    top: 30px;
+    right: 40px;
+    text-align: right;
+}
+
+.hud-best-label {
+    font-size: 0.8rem;
+    color: var(--text-dim);
+    letter-spacing: 2px;
+    margin-bottom: 2px;
+}
+
+.hud-best-time {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--cyan);
+    text-shadow: 0 0 10px rgba(0, 240, 255, 0.5);
+    font-variant-numeric: tabular-nums;
+}
+
 /* ---- Overlays ---- */
 .overlay {
     position: absolute;
@@ -326,21 +348,12 @@ kbd {
     color: var(--text-dim);
 }
 
-/* ---- HUD ---- */
-#hud {
-    align-items: flex-start;
-    justify-content: center;
-    padding: 20px;
-}
 
-.hud-top {
-    display: flex;
-    justify-content: space-between;
-    width: 100%;
-    max-width: 600px;
-}
 
 .hud-time {
+    position: absolute;
+    top: 30px;
+    left: 40px;
     font-family: var(--font-display);
     font-size: 2rem;
     font-weight: 700;
@@ -349,11 +362,14 @@ kbd {
 }
 
 .hud-bpm {
+    position: absolute;
+    top: 35px;
+    left: 50%;
+    transform: translateX(-50%);
     font-family: var(--font-display);
     font-size: 1rem;
     color: var(--cyan);
     opacity: 0.7;
-    align-self: center;
 }
 
 /* ---- GAME OVER ---- */
@@ -390,11 +406,13 @@ kbd {
     letter-spacing: 0.1em;
 }
 
-.gameover-time {
+.gameover-time,
+.gameover-best {
     display: flex;
     flex-direction: column;
     gap: 4px;
     margin-bottom: 30px;
+    position: relative;
 }
 
 .gameover-label {
@@ -402,6 +420,22 @@ kbd {
     color: var(--text-dim);
     text-transform: uppercase;
     letter-spacing: 0.2em;
+}
+
+.gameover-new-record {
+    position: absolute;
+    top: 50%;
+    right: -40px;
+    transform: translateY(-50%) rotate(15deg);
+    background: var(--cyan);
+    color: #000;
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 4px 8px;
+    border-radius: 4px;
+    box-shadow: 0 0 10px rgba(0, 240, 255, 0.8);
+    display: none;
+    z-index: 10;
 }
 
 .gameover-value {

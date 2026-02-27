@@ -17,9 +17,13 @@ export class UI {
         // HUD elements
         this.hudTime = document.getElementById('hud-time');
         this.hudBpm = document.getElementById('hud-bpm');
+        this.hudBestTime = document.getElementById('hud-best-time');
 
         // Game over elements
         this.gameoverTime = document.getElementById('gameover-time');
+        this.gameoverBestContainer = document.getElementById('gameover-best-container');
+        this.gameoverBest = document.getElementById('gameover-best');
+        this.gameoverNewRecord = document.getElementById('gameover-new-record');
 
         // Upload zone
         this.uploadZone = document.getElementById('upload-zone');
@@ -137,13 +141,28 @@ export class UI {
         this.loadingInfo.textContent = message;
     }
 
-    updateHUD(time, bpm) {
+    updateHUD(time, bpm, bestTime) {
         this.hudTime.textContent = time.toFixed(2);
         this.hudBpm.textContent = `${bpm} BPM`;
+        if (bestTime !== undefined) {
+            this.hudBestTime.textContent = bestTime.toFixed(2);
+        }
     }
 
-    showGameOver(time) {
+    showGameOver(time, bestTime, isNewBest) {
         this.gameoverTime.textContent = `${time.toFixed(2)}s`;
+
+        if (bestTime !== undefined) {
+            this.gameoverBest.textContent = `${bestTime.toFixed(2)}s`;
+            if (isNewBest) {
+                this.gameoverNewRecord.style.display = 'block';
+                this.gameoverBestContainer.classList.add('new-record'); // Optional CSS class for extra animation
+            } else {
+                this.gameoverNewRecord.style.display = 'none';
+                this.gameoverBestContainer.classList.remove('new-record');
+            }
+        }
+
         this.showScreen('gameover');
     }
 }

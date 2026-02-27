@@ -73,9 +73,11 @@
 
         <!-- HUD -->
         <div id="hud" class="overlay">
-            <div class="hud-top">
-                <div class="hud-time" id="hud-time">0.00</div>
-                <div class="hud-bpm" id="hud-bpm">-- BPM</div>
+            <div class="hud-time" id="hud-time">0.00</div>
+            <div class="hud-bpm" id="hud-bpm">-- BPM</div>
+            <div class="hud-top-right">
+                <div class="hud-best-label">MEJOR TIEMPO</div>
+                <div class="hud-best-time" id="hud-best-time">0.00</div>
             </div>
         </div>
 
@@ -86,6 +88,11 @@
                 <div class="gameover-time">
                     <span class="gameover-label">Tiempo</span>
                     <span class="gameover-value" id="gameover-time">0.00s</span>
+                </div>
+                <div class="gameover-best" id="gameover-best-container">
+                    <span class="gameover-label">Mejor</span>
+                    <span class="gameover-value" id="gameover-best">0.00s</span>
+                    <span class="gameover-new-record" id="gameover-new-record">¡NUEVO RÉCORD!</span>
                 </div>
                 <div class="gameover-buttons">
                     <button class="btn btn-continue" id="btn-continue">
