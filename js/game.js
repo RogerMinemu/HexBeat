@@ -138,7 +138,7 @@ export class Game {
             const events = this.levelGen.getEventsForTime(currentAudioTime);
 
             for (const event of events) {
-                const color = this.renderer.getPrimaryColor();
+                const color = this.renderer.getWallColor();
                 this.walls.spawnPattern(event.gaps, {
                     speed: event.speed,
                     color,
@@ -151,8 +151,8 @@ export class Game {
             this.walls.update(dt, audioData);
             this.particles.update(dt);
 
-            // Update wall colors
-            this.walls.setColor(this.renderer.getPrimaryColor());
+            // Update wall colors — continuous RGB cycling
+            this.walls.setColor(this.renderer.getWallColor());
 
             // Beat detection for particles
             this._handleBeats(currentAudioTime, audioData);
@@ -181,7 +181,7 @@ export class Game {
             this.ui.updateHUD(this.survivalTime, this.audio.bpm);
 
             // Update renderer visual effects
-            this.renderer.update(dt, this.gameTime, audioData);
+            this.renderer.update(dt, this.gameTime, audioData, this.audio.freqData, this.audio.timeData);
 
             // Check if song ended
             if (currentAudioTime >= this.audio.duration - 0.5) {
@@ -192,12 +192,12 @@ export class Game {
             // Idle animation
             this.gameTime += dt;
             const idleAudio = { bass: 0, mid: 0, treble: 0, energy: 0 };
-            this.renderer.update(dt, this.gameTime, idleAudio);
+            this.renderer.update(dt, this.gameTime, idleAudio, null, null);
             this.particles.update(dt);
         } else if (this.state === GameState.GAME_OVER) {
             this.gameTime += dt;
             const idleAudio = { bass: 0, mid: 0, treble: 0, energy: 0 };
-            this.renderer.update(dt, this.gameTime, idleAudio);
+            this.renderer.update(dt, this.gameTime, idleAudio, null, null);
             this.particles.update(dt);
         }
     }

@@ -99,9 +99,9 @@ export class Renderer3D {
         // Bloom
         this.bloomPass = new UnrealBloomPass(
             new THREE.Vector2(this.width, this.height),
-            0.8,   // strength
-            0.4,   // radius
-            0.85   // threshold
+            1.0,   // strength — cranked up
+            0.5,   // radius
+            0.6    // threshold — lowered so waveform lines glow
         );
         this.composer.addPass(this.bloomPass);
 
@@ -123,6 +123,7 @@ export class Renderer3D {
 
         this._createHexagon();
         this._createBackground();
+        this._createWaveform();
 
         // Color system
         this.hue = 0;
@@ -136,6 +137,9 @@ export class Renderer3D {
         ];
         this.currentPalette = 0;
         this.paletteChangeTimer = 0;
+
+        // RGB wall cycling
+        this.wallHue = 0; // 0-1 continuous cycle
 
         // Resize handler
         window.addEventListener('resize', () => this._onResize());
@@ -234,6 +238,83 @@ export class Renderer3D {
         }
     }
 
+    _createWaveform() {
+        const SEGMENTS = 128;
+
+        // --- Outer ring: frequency spectrum (bars going outward) ---
+        this.wfFreqSegments = SEGMENTS;
+        const freqPositions = new Float32Array(SEGMENTS * 3);
+        const freqColors = new Float32Array(SEGMENTS * 3);
+        for (let i = 0; i < SEGMENTS; i++) {
+            const angle = (i / SEGMENTS) * Math.PI * 2;
+            const r = 7;
+            freqPositions[i * 3] = Math.cos(angle) * r;
+            freqPositions[i * 3 + 1] = Math.sin(angle) * r;
+            freqPositions[i * 3 + 2] = -0.3;
+            freqColors[i * 3] = 0;
+            freqColors[i * 3 + 1] = 0.94;
+            freqColors[i * 3 + 2] = 1;
+        }
+
+        this.wfFreqGeo = new THREE.BufferGeometry();
+        this.wfFreqGeo.setAttribute('position', new THREE.BufferAttribute(freqPositions, 3));
+        this.wfFreqGeo.setAttribute('color', new THREE.BufferAttribute(freqColors, 3));
+
+        this.wfFreqMat = new THREE.LineBasicMaterial({
+            vertexColors: true,
+            transparent: true,
+            opacity: 0.85,
+            linewidth: 2
+        });
+
+        this.wfFreqLine = new THREE.LineLoop(this.wfFreqGeo, this.wfFreqMat);
+        this.scene.add(this.wfFreqLine);
+
+        // --- Inner ring: time-domain waveform ---
+        this.wfTimeSegments = SEGMENTS;
+        const timePositions = new Float32Array(SEGMENTS * 3);
+        const timeColors = new Float32Array(SEGMENTS * 3);
+        for (let i = 0; i < SEGMENTS; i++) {
+            const angle = (i / SEGMENTS) * Math.PI * 2;
+            const r = 5;
+            timePositions[i * 3] = Math.cos(angle) * r;
+            timePositions[i * 3 + 1] = Math.sin(angle) * r;
+            timePositions[i * 3 + 2] = -0.3;
+            timeColors[i * 3] = 1;
+            timeColors[i * 3 + 1] = 0;
+            timeColors[i * 3 + 2] = 0.67;
+        }
+
+        this.wfTimeGeo = new THREE.BufferGeometry();
+        this.wfTimeGeo.setAttribute('position', new THREE.BufferAttribute(timePositions, 3));
+        this.wfTimeGeo.setAttribute('color', new THREE.BufferAttribute(timeColors, 3));
+
+        this.wfTimeMat = new THREE.LineBasicMaterial({
+            vertexColors: true,
+            transparent: true,
+            opacity: 0.7,
+            linewidth: 2
+        });
+
+        this.wfTimeLine = new THREE.LineLoop(this.wfTimeGeo, this.wfTimeMat);
+        this.scene.add(this.wfTimeLine);
+
+        // --- Third ring: mirrored frequency (subtle, outermost) ---
+        const mirrorPositions = new Float32Array(SEGMENTS * 3);
+        this.wfMirrorGeo = new THREE.BufferGeometry();
+        this.wfMirrorGeo.setAttribute('position', new THREE.BufferAttribute(mirrorPositions, 3));
+
+        this.wfMirrorMat = new THREE.LineBasicMaterial({
+            color: 0x00f0ff,
+            transparent: true,
+            opacity: 0.35,
+            linewidth: 1
+        });
+
+        this.wfMirrorLine = new THREE.LineLoop(this.wfMirrorGeo, this.wfMirrorMat);
+        this.scene.add(this.wfMirrorLine);
+    }
+
     _onResize() {
         this.width = window.innerWidth;
         this.height = window.innerHeight;
@@ -243,7 +324,7 @@ export class Renderer3D {
         this.composer.setSize(this.width, this.height);
     }
 
-    update(dt, gameTime, audioData) {
+    update(dt, gameTime, audioData, freqData, timeData) {
         const { bass, mid, treble, energy } = audioData;
 
         // Color cycling based on time
@@ -254,25 +335,38 @@ export class Renderer3D {
         }
 
         const palette = this.colorPalettes[this.currentPalette];
+        const primaryColor = new THREE.Color(palette.primary);
+        const secondaryColor = new THREE.Color(palette.secondary);
+
+        // RGB wall hue cycling — continuous rainbow
+        this.wallHue = (this.wallHue + dt * 0.08) % 1;
 
         // Update hexagon outline color and pulse
-        const pulseScale = 1.0 + bass * 0.15;
+        const pulseScale = 1.0 + bass * 0.35;
         this.hexagonOutline.scale.set(pulseScale, pulseScale, 1);
+        this.hexagon.scale.set(pulseScale, pulseScale, 1);
 
-        const outlineColor = new THREE.Color(palette.primary);
-        this.hexagonOutline.material.color = outlineColor;
+        this.hexagonOutline.material.color = primaryColor;
         this.hexagonOutline.material.opacity = 0.5 + bass * 0.5;
+
+        // Hexagon fill pulses with bass
+        this.hexagon.material.opacity = 0.7 + bass * 0.3;
+        const hexBrightness = 0.02 + bass * 0.06;
+        this.hexagon.material.color.setHSL(this.wallHue, 0.3, hexBrightness);
 
         // Background rotation
         this.bgRotationGroup.rotation.z += dt * 0.1 * (1 + bass * 0.5);
 
         // Update background colors
         this.bgRotationGroup.children.forEach(child => {
-            child.material.color = outlineColor;
+            child.material.color = primaryColor;
         });
 
-        // Bloom intensity reacts to bass
-        this.bloomPass.strength = 0.6 + bass * 1.5;
+        // === WAVEFORM VISUALIZER UPDATE ===
+        this._updateWaveform(gameTime, audioData, freqData, timeData, primaryColor, secondaryColor);
+
+        // Bloom intensity reacts to bass — high base for neon glow
+        this.bloomPass.strength = 1.0 + bass * 2.0;
 
         // Chromatic aberration reacts to bass
         this.chromaPass.uniforms.uIntensity.value = 0.001 + bass * 0.008;
@@ -284,12 +378,106 @@ export class Renderer3D {
         this.renderer.setClearColor(bgColor);
     }
 
+    _updateWaveform(gameTime, audioData, freqData, timeData, primaryColor, secondaryColor) {
+        const SEGMENTS = this.wfFreqSegments;
+        const { bass, energy } = audioData;
+
+        // Slow rotation for the waveform rings
+        const wfRotation = gameTime * 0.15;
+
+        // --- Frequency ring (outer) ---
+        if (freqData && freqData.length > 0) {
+            const freqPos = this.wfFreqGeo.attributes.position.array;
+            const freqCol = this.wfFreqGeo.attributes.color.array;
+            const binStep = Math.floor(freqData.length / SEGMENTS);
+
+            for (let i = 0; i < SEGMENTS; i++) {
+                const angle = (i / SEGMENTS) * Math.PI * 2 + wfRotation;
+                const bin = Math.min(i * binStep, freqData.length - 1);
+                const amplitude = (freqData[bin] / 255) * 6.0; // BIG deformation
+                const r = 7 + amplitude;
+
+                freqPos[i * 3] = Math.cos(angle) * r;
+                freqPos[i * 3 + 1] = Math.sin(angle) * r;
+                freqPos[i * 3 + 2] = -0.3;
+
+                // Color gradient: primary → secondary, boosted brightness
+                const t = i / SEGMENTS;
+                const boost = 1.3 + amplitude * 0.15; // glow brighter on peaks
+                freqCol[i * 3] = Math.min(1, (primaryColor.r * (1 - t) + secondaryColor.r * t) * boost);
+                freqCol[i * 3 + 1] = Math.min(1, (primaryColor.g * (1 - t) + secondaryColor.g * t) * boost);
+                freqCol[i * 3 + 2] = Math.min(1, (primaryColor.b * (1 - t) + secondaryColor.b * t) * boost);
+            }
+
+            this.wfFreqGeo.attributes.position.needsUpdate = true;
+            this.wfFreqGeo.attributes.color.needsUpdate = true;
+        }
+        this.wfFreqMat.opacity = 0.5 + energy * 0.5;
+
+        // --- Time-domain ring (inner waveform) ---
+        if (timeData && timeData.length > 0) {
+            const timePos = this.wfTimeGeo.attributes.position.array;
+            const timeCol = this.wfTimeGeo.attributes.color.array;
+            const timeStep = Math.floor(timeData.length / SEGMENTS);
+
+            for (let i = 0; i < SEGMENTS; i++) {
+                const angle = (i / SEGMENTS) * Math.PI * 2 - wfRotation * 0.7;
+                const bin = Math.min(i * timeStep, timeData.length - 1);
+                // timeData is 0-255 centered at 128
+                const deviation = (timeData[bin] - 128) / 128;
+                const r = 5 + deviation * 3.0; // bigger wave deformation
+
+                timePos[i * 3] = Math.cos(angle) * r;
+                timePos[i * 3 + 1] = Math.sin(angle) * r;
+                timePos[i * 3 + 2] = -0.3;
+
+                // Secondary color, boosted brightness on peaks
+                const brightness = 0.8 + Math.abs(deviation) * 1.2;
+                timeCol[i * 3] = Math.min(1, secondaryColor.r * brightness);
+                timeCol[i * 3 + 1] = Math.min(1, secondaryColor.g * brightness);
+                timeCol[i * 3 + 2] = Math.min(1, secondaryColor.b * brightness);
+            }
+
+            this.wfTimeGeo.attributes.position.needsUpdate = true;
+            this.wfTimeGeo.attributes.color.needsUpdate = true;
+        }
+        this.wfTimeMat.opacity = 0.4 + bass * 0.6;
+
+        // --- Mirror ring (outermost, subtle) ---
+        if (freqData && freqData.length > 0) {
+            const mirrorPos = this.wfMirrorGeo.attributes.position.array;
+            const binStep = Math.floor(freqData.length / SEGMENTS);
+
+            for (let i = 0; i < SEGMENTS; i++) {
+                const angle = (i / SEGMENTS) * Math.PI * 2 - wfRotation * 0.5;
+                const bin = Math.min(i * binStep, freqData.length - 1);
+                const amplitude = (freqData[bin] / 255) * 5.0;
+                const r = 10 + amplitude;
+
+                mirrorPos[i * 3] = Math.cos(angle) * r;
+                mirrorPos[i * 3 + 1] = Math.sin(angle) * r;
+                mirrorPos[i * 3 + 2] = -0.5;
+            }
+
+            this.wfMirrorGeo.attributes.position.needsUpdate = true;
+        }
+        this.wfMirrorMat.color = primaryColor;
+        this.wfMirrorMat.opacity = 0.15 + energy * 0.3;
+    }
+
     getPrimaryColor() {
         return this.colorPalettes[this.currentPalette].primary;
     }
 
     getSecondaryColor() {
         return this.colorPalettes[this.currentPalette].secondary;
+    }
+
+    /**
+     * Get the current RGB cycling color for walls
+     */
+    getWallColor() {
+        return new THREE.Color().setHSL(this.wallHue, 1.0, 0.5);
     }
 
     render() {
