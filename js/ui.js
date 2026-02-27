@@ -30,13 +30,55 @@ export class UI {
         this.btnNewSong = document.getElementById('btn-new-song');
         this.btnContinue = document.getElementById('btn-continue');
 
+        // Song library
+        this.songLibrary = document.getElementById('song-library');
+        this.songList = document.getElementById('song-list');
+
         // Callbacks
         this.onFileSelected = null;
+        this.onSongSelected = null; // called with (url, title)
         this.onRetry = null;
         this.onNewSong = null;
         this.onContinue = null;
 
         this._setupEvents();
+        this._loadSongLibrary();
+    }
+
+    async _loadSongLibrary() {
+        try {
+            const res = await fetch('songs/songs.json');
+            if (!res.ok) return;
+            const songs = await res.json();
+
+            // Filter out placeholder entries
+            const valid = songs.filter(s => s.file && s.file !== 'ejemplo.mp3');
+            if (valid.length === 0) return;
+
+            // Show library section
+            this.songLibrary.style.display = '';
+
+            // Render song items
+            this.songList.innerHTML = '';
+            for (const song of valid) {
+                const item = document.createElement('div');
+                item.className = 'song-item';
+                item.innerHTML = `
+                    <div class="song-icon">🎵</div>
+                    <div class="song-info">
+                        <div class="song-title">${song.title || song.file}</div>
+                        <div class="song-artist">${song.artist || 'Desconocido'}</div>
+                    </div>
+                `;
+                item.addEventListener('click', () => {
+                    const url = `songs/${song.file}`;
+                    this.onSongSelected?.(url, song.title || song.file);
+                });
+                this.songList.appendChild(item);
+            }
+        } catch (e) {
+            // No songs.json found or invalid — just hide the library
+        }
     }
 
     _setupEvents() {

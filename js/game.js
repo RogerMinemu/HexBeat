@@ -69,6 +69,7 @@ export class Game {
 
         // Setup UI callbacks
         this.ui.onFileSelected = (file) => this._onFileSelected(file);
+        this.ui.onSongSelected = (url, title) => this._onSongFromLibrary(url, title);
         this.ui.onRetry = () => this._onRetry();
         this.ui.onNewSong = () => this._onNewSong();
         this.ui.onContinue = () => this._onContinue();
@@ -281,6 +282,27 @@ export class Game {
         } catch (error) {
             console.error('Error loading audio:', error);
             this.ui.updateLoading('Error al cargar el audio. Intenta con otro archivo.', 0);
+            setTimeout(() => {
+                this.ui.showScreen('menu');
+                this.state = GameState.MENU;
+            }, 2000);
+        }
+    }
+
+    async _onSongFromLibrary(url, title) {
+        this.state = GameState.ANALYZING;
+        this.ui.showScreen('loading');
+        this.ui.updateLoading(`Cargando ${title}...`, 5);
+
+        try {
+            const response = await fetch(url);
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            const blob = await response.blob();
+            const file = new File([blob], title, { type: blob.type });
+            await this._onFileSelected(file);
+        } catch (error) {
+            console.error('Error loading song:', error);
+            this.ui.updateLoading('Error al cargar la canción.', 0);
             setTimeout(() => {
                 this.ui.showScreen('menu');
                 this.state = GameState.MENU;
