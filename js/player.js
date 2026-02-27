@@ -39,7 +39,7 @@ export class Player {
 
         const geo = new THREE.ShapeGeometry(shape);
         const mat = new THREE.MeshBasicMaterial({
-            color: 0xffffff,
+            color: 0xE0E0E0,
             side: THREE.DoubleSide
         });
 

@@ -29,6 +29,10 @@ export class UI {
         this.uploadZone = document.getElementById('upload-zone');
         this.audioInput = document.getElementById('audio-input');
 
+        // YouTube zone
+        this.youtubeInput = document.getElementById('youtube-input');
+        this.btnYoutube = document.getElementById('btn-youtube');
+
         // Buttons
         this.btnRetry = document.getElementById('btn-retry');
         this.btnNewSong = document.getElementById('btn-new-song');
@@ -41,6 +45,7 @@ export class UI {
         // Callbacks
         this.onFileSelected = null;
         this.onSongSelected = null; // called with (url, title)
+        this.onYoutubeSelected = null; // called with (youtubeUrl)
         this.onRetry = null;
         this.onNewSong = null;
         this.onContinue = null;
@@ -113,6 +118,24 @@ export class UI {
             const file = e.dataTransfer.files[0];
             if (file && (file.type.includes('audio') || file.name.match(/\.(mp3|ogg)$/i))) {
                 this.onFileSelected?.(file);
+            }
+        });
+
+        // YouTube handler
+        this.btnYoutube.addEventListener('click', () => {
+            const url = this.youtubeInput.value.trim();
+            if (url) {
+                this.onYoutubeSelected?.(url);
+            }
+        });
+
+        // Enter key for YouTube input
+        this.youtubeInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                const url = this.youtubeInput.value.trim();
+                if (url) {
+                    this.onYoutubeSelected?.(url);
+                }
             }
         });
 

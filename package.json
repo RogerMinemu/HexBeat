@@ -1,0 +1,20 @@
+{
+  "name": "threejsmusic",
+  "version": "1.0.0",
+  "description": "Un juego estilo **Open Hexagon** donde subes tu propia música y el juego genera un nivel procedural sincronizado con el ritmo.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@distube/ytdl-core": "^4.15.9",
+    "cors": "^2.8.6",
+    "express": "^5.2.1",
+    "play-dl": "^1.9.7",
+    "youtube-dl-exec": "^3.1.3"
+  }
+}

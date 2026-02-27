@@ -10,6 +10,8 @@ import { ParticleSystem } from './particles.js';
 import { LevelGenerator } from './levelGenerator.js';
 import { UI } from './ui.js';
 
+const YOUTUBE_PROXY_URL = window.location.origin;
+
 const GameState = {
     MENU: 'menu',
     ANALYZING: 'analyzing',
@@ -75,6 +77,7 @@ export class Game {
         // Setup UI callbacks
         this.ui.onFileSelected = (file) => this._onFileSelected(file);
         this.ui.onSongSelected = (url, title) => this._onSongFromLibrary(url, title);
+        this.ui.onYoutubeSelected = (url) => this._onSongFromYoutube(url);
         this.ui.onRetry = () => this._onRetry();
         this.ui.onNewSong = () => this._onNewSong();
         this.ui.onContinue = () => this._onContinue();
@@ -335,6 +338,49 @@ export class Game {
                 this.ui.showScreen('menu');
                 this.state = GameState.MENU;
             }, 2000);
+        }
+    }
+
+    async _onSongFromYoutube(youtubeUrl) {
+        this.state = GameState.ANALYZING;
+        this.ui.showScreen('loading');
+        this.ui.updateLoading('Conectando con YouTube...', 5);
+
+        try {
+            // Llama a nuestro servidor proxy local o remoto
+            const proxyUrl = `${YOUTUBE_PROXY_URL}/yt?url=${encodeURIComponent(youtubeUrl)}`;
+            const response = await fetch(proxyUrl);
+
+            if (!response.ok) {
+                const errData = await response.json();
+                throw new Error(errData.error || 'Error en el servidor proxy');
+            }
+
+            // Muestra progreso descargando el stream
+            this.ui.updateLoading('Descargando audio de YouTube...', 30);
+
+            // Extract the original title from headers if possible
+            let title = 'YouTube Audio';
+            const titleHeader = response.headers.get('X-Video-Title');
+            if (titleHeader) {
+                title = decodeURIComponent(titleHeader);
+            }
+
+            const blob = await response.blob();
+
+            // Fake a file to maintain compatibility with the rest of the system (high scores, analysis)
+            const file = new File([blob], title + '.mp3', { type: blob.type });
+
+            this.ui.updateLoading('Analizando frecuencias...', 60);
+            await this._onFileSelected(file);
+
+        } catch (error) {
+            console.error('Error procesando YouTube URL:', error);
+            this.ui.updateLoading('Error descargando audio de YouTube.', 0);
+            setTimeout(() => {
+                this.ui.showScreen('menu');
+                this.state = GameState.MENU;
+            }, 3000);
         }
     }
 
