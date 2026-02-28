@@ -36,6 +36,7 @@ export class Game {
         this.survivalTime = 0;
         this.lastTimestamp = 0;
         this.isRunning = false;
+        this.isTransitioning = false;
 
         // High Score Tracking
         this.currentSongId = null;
@@ -232,6 +233,8 @@ export class Game {
     }
 
     _onGameOver() {
+        if (this.isTransitioning) return;
+        this.isTransitioning = true;
         this.state = GameState.GAME_OVER;
 
         // Save audio position for continue
@@ -262,11 +265,14 @@ export class Game {
         // Show game over after brief delay
         setTimeout(() => {
             // isVictory = false
+            this.isTransitioning = false;
             this.ui.showGameOver(this.survivalTime, this.bestTime, this.isNewBest, false);
         }, 800);
     }
 
     _onSongComplete() {
+        if (this.isTransitioning) return;
+        this.isTransitioning = true;
         // Player survived the whole song!
         this.state = GameState.GAME_OVER;
         this.audio.stop();
@@ -289,6 +295,7 @@ export class Game {
 
         setTimeout(() => {
             // isVictory = true
+            this.isTransitioning = false;
             this.ui.showGameOver(this.survivalTime, this.bestTime, this.isNewBest, true);
         }, 1200);
     }
@@ -427,7 +434,7 @@ export class Game {
     }
 
     _onContinue() {
-        if (this.state !== GameState.GAME_OVER) return;
+        if (this.state !== GameState.GAME_OVER || this.isTransitioning) return;
 
         this.state = GameState.PLAYING;
 
