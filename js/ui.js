@@ -188,7 +188,7 @@ export class UI {
         }
     }
 
-    showGameOver(time, bestTime, isNewBest) {
+    showGameOver(time, bestTime, isNewBest, isVictory = false) {
         this.gameoverTime.textContent = `${time.toFixed(2)}s`;
 
         if (bestTime !== undefined) {
@@ -200,6 +200,16 @@ export class UI {
                 this.gameoverNewRecord.style.display = 'none';
                 this.gameoverBestContainer.classList.remove('new-record');
             }
+        }
+
+        // Si es victoria, ocultar el botón de Continuar y cambiar el título
+        const titleElement = this.gameoverScreen.querySelector('.gameover-title');
+        if (isVictory) {
+            this.btnContinue.style.display = 'none';
+            if (titleElement) titleElement.textContent = 'SONG CLEARED';
+        } else {
+            this.btnContinue.style.display = 'block'; // Volver a mostrarlo si se muere con normalidad
+            if (titleElement) titleElement.textContent = 'GAME OVER';
         }
 
         this.showScreen('gameover');

@@ -261,7 +261,8 @@ export class Game {
 
         // Show game over after brief delay
         setTimeout(() => {
-            this.ui.showGameOver(this.survivalTime, this.bestTime, this.isNewBest);
+            // isVictory = false
+            this.ui.showGameOver(this.survivalTime, this.bestTime, this.isNewBest, false);
         }, 800);
     }
 
@@ -287,7 +288,8 @@ export class Game {
         }
 
         setTimeout(() => {
-            this.ui.showGameOver(this.survivalTime, this.bestTime, this.isNewBest);
+            // isVictory = true
+            this.ui.showGameOver(this.survivalTime, this.bestTime, this.isNewBest, true);
         }, 1200);
     }
 

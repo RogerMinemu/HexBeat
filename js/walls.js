@@ -22,10 +22,10 @@ export class WallSystem {
 
         // Shared outline material
         this.outlineMat = new THREE.LineBasicMaterial({
-            color: 0xffffff,
+            color: 0xff0000, // Rojo vivo
             transparent: true,
-            opacity: 0.7,
-            linewidth: 1
+            opacity: 0.6,  // Full opacidad para que brille al máximo
+            linewidth: 3   // Más gruesa
         });
     }
 
@@ -89,11 +89,11 @@ export class WallSystem {
 
         const geometry = new THREE.ShapeGeometry(shape);
         // Dim color so walls stay below bloom threshold
-        const dimColor = new THREE.Color(color).multiplyScalar(0.35);
+        const brightColor = new THREE.Color(color).multiplyScalar(3.2);
         const material = new THREE.MeshBasicMaterial({
-            color: dimColor,
+            color: brightColor,
             transparent: true,
-            opacity: 0.9,
+            opacity: 1.0,
             side: THREE.DoubleSide
         });
 
@@ -232,10 +232,10 @@ export class WallSystem {
     }
 
     setColor(color) {
-        // Dim color so walls don't bloom
-        const dimColor = new THREE.Color(color).multiplyScalar(0.35);
+        // Multiplier set to 3.2 to match bright walls creation
+        const brightColor = new THREE.Color(color).multiplyScalar(0.6);
         for (const wall of this.walls) {
-            wall.material.color.copy(dimColor);
+            wall.material.color.copy(brightColor);
         }
     }
 
