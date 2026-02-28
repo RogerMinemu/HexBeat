@@ -95,7 +95,7 @@ body {
 /* ---- MENU ---- */
 .menu-content {
     text-align: center;
-    max-width: 500px;
+    max-width: 600px;
     padding: 40px;
 }
 
@@ -104,6 +104,8 @@ body {
     font-size: clamp(3rem, 8vw, 5rem);
     font-weight: 900;
     letter-spacing: 0.05em;
+    padding-left: 0.05em;
+    /* Añade espacio a la izquierda para balancear el letter-spacing extra de la derecha */
     margin-bottom: 8px;
     line-height: 1;
 }
