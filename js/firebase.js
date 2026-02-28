@@ -8,29 +8,41 @@ let db;
 let googleProvider;
 
 // Fetch config dynamically from backend so secrets aren't exposed in source code
-async function initializeFirebase() {
+async function fetchFirebaseConfig() {
     try {
         const response = await fetch('/api/firebase-config');
         if (!response.ok) throw new Error('Failed to fetch firebase config from server');
-        const firebaseConfig = await response.json();
-
-        app = initializeApp(firebaseConfig);
-        auth = getAuth(app);
-        db = getFirestore(app);
-        googleProvider = new GoogleAuthProvider();
+        return await response.json();
     } catch (e) {
-        console.error("Firebase init failing:", e);
+        console.error("Firebase config fetch failing:", e);
+        return null;
     }
 }
-await initializeFirebase();
 
 export class FirebaseManager {
     constructor() {
         this.currentUser = null;
         this.onUserChangedCallback = null;
+        this.app = null;
+        this.auth = null;
+        this.db = null;
+        this.googleProvider = null;
+        this.initialized = false;
+
+        this.initPromise = this.initialize();
+    }
+
+    async initialize() {
+        const firebaseConfig = await fetchFirebaseConfig();
+        if (!firebaseConfig) return;
+
+        this.app = initializeApp(firebaseConfig);
+        this.auth = getAuth(this.app);
+        this.db = getFirestore(this.app);
+        this.googleProvider = new GoogleAuthProvider();
 
         // Listen to auth state changes
-        onAuthStateChanged(auth, (user) => {
+        onAuthStateChanged(this.auth, (user) => {
             if (user) {
                 this.currentUser = {
                     uid: user.uid,
@@ -46,18 +58,22 @@ export class FirebaseManager {
                 this.onUserChangedCallback(this.currentUser);
             }
         });
+
+        this.initialized = true;
     }
 
     onUserChanged(callback) {
         this.onUserChangedCallback = callback;
         // Trigger immediately if already resolved
-        callback(this.currentUser);
+        if (this.initialized) {
+            callback(this.currentUser);
+        }
     }
 
     async loginWithGoogle() {
         try {
-            // Volvemos a signInWithPopup ya que redirect requiere Firebase Hosting /__/ endpoints
-            const result = await signInWithPopup(auth, googleProvider);
+            await this.initPromise; // Asegurar que está inicializado
+            const result = await signInWithPopup(this.auth, this.googleProvider);
             return result.user;
         } catch (error) {
             console.error("Error signing in with Google:", error);
@@ -67,7 +83,8 @@ export class FirebaseManager {
 
     async logout() {
         try {
-            await signOut(auth);
+            await this.initPromise;
+            await signOut(this.auth);
         } catch (error) {
             console.error("Error signing out:", error);
             throw error;
@@ -75,8 +92,9 @@ export class FirebaseManager {
     }
 
     async getAuthToken() {
-        if (!auth.currentUser) return null;
-        return await auth.currentUser.getIdToken();
+        await this.initPromise;
+        if (!this.auth.currentUser) return null;
+        return await this.auth.currentUser.getIdToken();
     }
 }
 
