@@ -62,7 +62,7 @@ export class WallSystem {
         // Create an arc segment
         const angleStart = side * SIDE_ANGLE - Math.PI / 6;
         const angleEnd = (side + 1) * SIDE_ANGLE - Math.PI / 6;
-        const segments = 8;
+        const segments = 1;
 
         const shape = new THREE.Shape();
 
@@ -111,7 +111,7 @@ export class WallSystem {
     }
 
     _getOutlinePoints(angleStart, angleEnd, radius, thickness) {
-        const segments = 8;
+        const segments = 1;
         const points = [];
 
         // Outer arc
@@ -167,7 +167,7 @@ export class WallSystem {
         const thickness = data.thickness;
         const angleStart = data.angleStart;
         const angleEnd = data.angleEnd;
-        const segments = 8;
+        const segments = 1;
 
         const shape = new THREE.Shape();
 

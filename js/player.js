@@ -140,19 +140,11 @@ export class Player {
         }
     }
 
-    // Check collision with a wall defined by angle range and radius range
+    // Check collision with a straight wall defined by angle range and radius range
     checkCollision(wallAngleStart, wallAngleEnd, wallInnerRadius, wallOuterRadius) {
         const playerR = this.orbitRadius;
         const playerAngle = ((this.angle % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
-        const playerSize = 0.2; // collision radius
-
-        // Check radial overlap
-        const hitDepth = 0.05;
-        const lethalOuterBound = Math.min(wallOuterRadius, wallInnerRadius + hitDepth);
-
-        if (playerR + playerSize < wallInnerRadius || playerR - playerSize > lethalOuterBound) {
-            return false;
-        }
+        const playerSize = 0.15; // slightly reduced collision radius for fairness
 
         // Normalize wall angles
         let aStart = ((wallAngleStart % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
@@ -161,12 +153,35 @@ export class Player {
         // Angular collision check with player size
         const angularSize = (playerSize * 0.7) / playerR;
 
-        // Handle wrapping
+        // Check if player is angularly within the wall segment (with wrapping)
+        let isAngularHit = false;
         if (aStart <= aEnd) {
-            if (playerAngle + angularSize > aStart && playerAngle - angularSize < aEnd) return true;
+            if (playerAngle + angularSize > aStart && playerAngle - angularSize < aEnd) isAngularHit = true;
         } else {
             // Wraps around 0
-            if (playerAngle + angularSize > aStart || playerAngle - angularSize < aEnd) return true;
+            if (playerAngle + angularSize > aStart || playerAngle - angularSize < aEnd) isAngularHit = true;
+        }
+
+        if (!isAngularHit) return false;
+
+        // Find mid angle directly from raw angles to avoid wrap math issues
+        const rawMidAngle = (wallAngleStart + wallAngleEnd) / 2;
+        const midAngle = ((rawMidAngle % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
+
+        let angleDiff = Math.abs(playerAngle - midAngle);
+        if (angleDiff > Math.PI) angleDiff = Math.PI * 2 - angleDiff;
+
+        // Distance from center to the flat line segment at player's exact angular offset
+        const cos30 = Math.cos(Math.PI / 6);
+        const distInner = (wallInnerRadius * cos30) / Math.cos(angleDiff);
+        const distOuter = (wallOuterRadius * cos30) / Math.cos(angleDiff);
+
+        // Check radial overlap against the flat wall
+        const hitDepth = 0.05;
+        const lethalOuterBound = Math.min(distOuter, distInner + hitDepth);
+
+        if (playerR + playerSize >= distInner && playerR - playerSize <= lethalOuterBound) {
+            return true;
         }
 
         return false;
