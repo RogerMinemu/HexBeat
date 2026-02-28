@@ -116,7 +116,7 @@ export class UI {
             e.preventDefault();
             this.uploadZone.classList.remove('drag-over');
             const file = e.dataTransfer.files[0];
-            if (file && (file.type.includes('audio') || file.name.match(/\.(mp3|ogg)$/i))) {
+            if (file && (file.type.includes('audio') || file.name.match(/\.(mp3|ogg|wav|flac)$/i))) {
                 this.onFileSelected?.(file);
             }
         });
