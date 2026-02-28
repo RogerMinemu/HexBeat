@@ -264,6 +264,12 @@ export class UI {
             case 'hud': this.hud.classList.add('active'); break;
             case 'gameover': this.gameoverScreen.classList.add('active'); break;
         }
+
+        // Only show auth/user-profile section on menu screen
+        const topBar = document.querySelector('.top-bar .auth-section');
+        if (topBar) {
+            topBar.style.display = name === 'menu' ? '' : 'none';
+        }
     }
 
     updateAuthState(user) {
