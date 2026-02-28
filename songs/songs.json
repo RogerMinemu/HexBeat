@@ -1,7 +1,22 @@
 [
     {
+        "title": "Circuit Carousel",
+        "file": "Circuit Carousel.mp3",
+        "artist": "RogerMinemu"
+    },
+    {
+        "title": "Clockwork Candy Heart",
+        "file": "Clockwork Candy Heart.mp3",
+        "artist": "RogerMinemu"
+    },
+    {
         "title": "Genocide desu",
         "file": "Genocide desu.mp3",
-        "artist": "Minemi"
+        "artist": "RogerMinemu"
+    },
+    {
+        "title": "Minemi's Light",
+        "file": "Minemi's Light.mp3",
+        "artist": "RogerMinemu"
     }
 ]

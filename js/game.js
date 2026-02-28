@@ -429,6 +429,10 @@ export class Game {
 
         this.state = GameState.PLAYING;
 
+        // Reset the score counter to 0, but leave gameTime and song alone
+        this.survivalTime = 0;
+        this.isNewBest = false;
+
         // Clear all current walls so player doesn't instantly die again
         this.walls.clear();
         this.particles.clear();
