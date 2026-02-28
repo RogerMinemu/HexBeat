@@ -126,6 +126,95 @@ app.get('/yt', async (req, res) => {
     }
 });
 
+// Configure Multer for community song uploads
+const fs = require('fs');
+const path = require('path');
+const multer = require('multer');
+
+// Create the songs directory if it doesn't exist just in case
+const songsDir = path.join(__dirname, 'songs');
+if (!fs.existsSync(songsDir)) {
+    fs.mkdirSync(songsDir, { recursive: true });
+}
+
+const storage = multer.diskStorage({
+    destination: function (req, file, cb) {
+        cb(null, songsDir);
+    },
+    filename: function (req, file, cb) {
+        // Sanitize the filename slightly, keep the original extension
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        const ext = path.extname(file.originalname);
+        const name = path.basename(file.originalname, ext).replace(/[^a-zA-Z0-9_-]/g, '');
+        cb(null, `${name}-${uniqueSuffix}${ext}`);
+    }
+});
+
+const upload = multer({
+    storage: storage,
+    limits: { fileSize: 30 * 1024 * 1024 }, // 30 MB limit
+    fileFilter: function (req, file, cb) {
+        const allowedExtensions = /mp3|ogg|wav|flac/;
+        const extname = allowedExtensions.test(path.extname(file.originalname).toLowerCase());
+        const isAudio = file.mimetype.startsWith('audio/') || file.mimetype.startsWith('video/');
+
+        if (extname && isAudio) {
+            return cb(null, true);
+        } else {
+            cb(new Error('Formato de archivo no soportado. Sólo MP3, OGG, WAV o FLAC.'));
+        }
+    }
+});
+
+// Community audio upload endpoint
+app.post('/upload-community', upload.single('audioFile'), (req, res) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({ error: 'No se ha subido ningún archivo.' });
+        }
+
+        const title = req.body.title || 'Canción sin título';
+        const artist = req.body.artist || 'Comunidad';
+        const filename = req.file.filename;
+
+        // Construct the new song entry
+        const newSongInfo = {
+            title: title,
+            file: filename,
+            artist: artist,
+            community: true,
+            uploadTime: new Date().toISOString()
+        };
+
+        // Read and update songs.json
+        const songsJsonPath = path.join(songsDir, 'songs.json');
+        let songsData = [];
+
+        if (fs.existsSync(songsJsonPath)) {
+            const rawData = fs.readFileSync(songsJsonPath, 'utf8');
+            try {
+                songsData = JSON.parse(rawData);
+            } catch (e) {
+                console.warn('songs.json estaba corrupto o vacío, creando uno nuevo.');
+            }
+        }
+
+        songsData.push(newSongInfo);
+
+        fs.writeFileSync(songsJsonPath, JSON.stringify(songsData, null, 4), 'utf8');
+
+        res.json({
+            success: true,
+            message: 'Canción subida correctamente.',
+            song: newSongInfo
+        });
+
+    } catch (error) {
+        console.error('Error al subir la canción de la comunidad:', error);
+        res.status(500).json({ error: 'Error interno del servidor guardando la canción.' });
+    }
+});
+
 app.listen(PORT, () => {
     console.log(`===========================================`);
     console.log(`🎵 HexBeat YouTube Proxy (yt-dlp) corriendo en el puerto ${PORT}`);

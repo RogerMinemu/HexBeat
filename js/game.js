@@ -521,6 +521,10 @@ export class Game {
             formData.append('audioFile', file);
             formData.append('title', title);
 
+            // Añadir el nombre del usuario logeado como artista
+            const uploaderName = firebaseManager.currentUser.displayName || "Usuario Anónimo";
+            formData.append('artist', uploaderName);
+
             const response = await fetch('/upload-community', {
                 method: 'POST',
                 headers: {
@@ -536,7 +540,8 @@ export class Game {
 
             // Success
             this.ui.closeCommunityModal();
-            // TODO: Refresh community song list
+            // Refresh community song list
+            await this.ui._loadSongLibrary();
             alert("¡Canción publicada en la Comunidad con éxito!");
 
         } catch (error) {
