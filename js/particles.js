@@ -127,23 +127,23 @@ export class ParticleSystem {
      * Game over explosion
      */
     emitExplosion(x, y) {
-        const count = 80;
+        const count = 300; // Increased particle count massively
         for (let i = 0; i < count; i++) {
             const p = this._getInactiveParticle();
             if (!p) break;
 
             const angle = Math.random() * TWO_PI;
-            const spd = 2 + Math.random() * 12;
+            const spd = 5 + Math.random() * 25; // Much faster burst
 
             p.x = x;
             p.y = y;
             p.z = 0;
             p.vx = Math.cos(angle) * spd;
             p.vy = Math.sin(angle) * spd;
-            p.vz = (Math.random() - 0.5) * 5;
-            p.life = 0.5 + Math.random() * 1.0;
+            p.vz = (Math.random() - 0.5) * 8;
+            p.life = 0.6 + Math.random() * 1.5;
             p.maxLife = p.life;
-            p.size = 0.1 + Math.random() * 0.3;
+            p.size = 0.2 + Math.random() * 0.5; // Bigger particles
 
             // Random warm colors for explosion
             p.color.setHSL(Math.random() * 0.15, 1, 0.5 + Math.random() * 0.5);

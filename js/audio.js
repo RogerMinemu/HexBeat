@@ -10,6 +10,9 @@ export class AudioManager {
         this.buffer = null;
         this.gainNode = null;
 
+        // SFX
+        this.explosionBuffer = null;
+
         // Analysis data
         this.bpm = 120;
         this.energyMap = []; // [{time, bass, mid, treble, total}]
@@ -39,6 +42,20 @@ export class AudioManager {
 
         this.freqData = new Uint8Array(this.analyser.frequencyBinCount);
         this.timeData = new Uint8Array(this.analyser.frequencyBinCount);
+
+        // Preload SFX
+        this._loadSFX();
+    }
+
+    async _loadSFX() {
+        try {
+            const response = await fetch('sounds/daviddumaisaudio-large-underwater-explosion-190270.mp3');
+            if (!response.ok) return;
+            const arrayBuffer = await response.arrayBuffer();
+            this.explosionBuffer = await this.ctx.decodeAudioData(arrayBuffer);
+        } catch (e) {
+            console.warn("Could not preload explosion sfx:", e);
+        }
     }
 
     async loadFile(file, onProgress) {
@@ -227,9 +244,41 @@ export class AudioManager {
             try { this.source.stop(); } catch (e) { /* already stopped */ }
             this.source = null;
         }
+        if (this.gainNode && this.ctx) {
+            this.gainNode.gain.cancelScheduledValues(this.ctx.currentTime);
+            this.gainNode.gain.setValueAtTime(1, this.ctx.currentTime); // Reset volume for next play
+        }
         this.isPlaying = false;
         this.pauseOffset = 0;
         this.startTime = 0;
+    }
+
+    fadeOut(duration = 0.8) {
+        if (!this.isPlaying || !this.gainNode || !this.ctx) return;
+
+        const now = this.ctx.currentTime;
+        this.gainNode.gain.cancelScheduledValues(now);
+        this.gainNode.gain.setValueAtTime(this.gainNode.gain.value, now);
+        this.gainNode.gain.exponentialRampToValueAtTime(0.001, now + duration);
+
+        // Actually stop the playback node after the fade finishes
+        setTimeout(() => {
+            if (this.isPlaying) this.stop();
+        }, duration * 1000);
+    }
+
+    playExplosion() {
+        if (!this.ctx || !this.explosionBuffer) return;
+        const source = this.ctx.createBufferSource();
+        source.buffer = this.explosionBuffer;
+
+        // Optional: route through a separate gain node if we want to control SFX volume
+        const sfxGain = this.ctx.createGain();
+        sfxGain.gain.value = 1.0;
+
+        source.connect(sfxGain);
+        sfxGain.connect(this.ctx.destination);
+        source.start(0);
     }
 
     restart() {

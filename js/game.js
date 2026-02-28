@@ -240,7 +240,8 @@ export class Game {
         // Save audio position for continue
         this._deathAudioTime = this.audio.currentTime;
 
-        this.audio.stop();
+        this.audio.fadeOut(0.8);
+        this.audio.playExplosion();
 
         // High score check
         if (this.survivalTime > this.bestTime) {
@@ -251,10 +252,10 @@ export class Game {
             }
         }
 
-        // Explosion at player position
-        const px = this.player.mesh.position.x;
-        const py = this.player.mesh.position.y;
-        this.particles.emitExplosion(px, py);
+        // Explosion at player position (accounting for global scene rotation)
+        const playerWorldPos = new THREE.Vector3();
+        this.player.mesh.getWorldPosition(playerWorldPos);
+        this.particles.emitExplosion(playerWorldPos.x, playerWorldPos.y);
 
         // Big shake
         this.shakeIntensity = 2;
