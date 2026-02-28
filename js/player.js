@@ -147,7 +147,10 @@ export class Player {
         const playerSize = 0.2; // collision radius
 
         // Check radial overlap
-        if (playerR + playerSize < wallInnerRadius || playerR - playerSize > wallOuterRadius) {
+        const hitDepth = 0.05;
+        const lethalOuterBound = Math.min(wallOuterRadius, wallInnerRadius + hitDepth);
+
+        if (playerR + playerSize < wallInnerRadius || playerR - playerSize > lethalOuterBound) {
             return false;
         }
 
@@ -156,7 +159,7 @@ export class Player {
         let aEnd = ((wallAngleEnd % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
 
         // Angular collision check with player size
-        const angularSize = playerSize / playerR;
+        const angularSize = (playerSize * 0.7) / playerR;
 
         // Handle wrapping
         if (aStart <= aEnd) {
