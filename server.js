@@ -7,6 +7,7 @@
 const express = require('express');
 const cors = require('cors');
 const youtubedl = require('youtube-dl-exec');
+const UAParser = require('ua-parser-js');
 
 const app = express();
 // Pterodactyl uses process.env.SERVER_PORT mostly, but we keep PORT as fallback
@@ -14,6 +15,44 @@ const PORT = process.env.SERVER_PORT || process.env.PORT || 3001;
 
 // Enable CORS so the browser game can fetch from this server
 app.use(cors());
+
+// Logger Middleware
+app.use((req, res, next) => {
+    const now = new Date();
+    // Usa toLocaleDateString en formato español para DD/MM/YYYY
+    const dateStr = now.toLocaleDateString('es-ES', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric'
+    });
+
+    // Extraer User Agent
+    const parser = new UAParser(req.headers['user-agent']);
+    const os = parser.getOS();
+    const device = parser.getDevice();
+    const browser = parser.getBrowser();
+
+    // Ensamblar string de dispositivo estilo: Android 14 Samsung
+    let deviceStr = '';
+    if (os.name) {
+        deviceStr = `${os.name} ${os.version || ''}`.trim();
+        if (device.vendor) deviceStr += ` ${device.vendor}`;
+        if (device.model) deviceStr += ` ${device.model}`;
+    } else if (browser.name) {
+        deviceStr = `${browser.name}`;
+    } else {
+        deviceStr = req.headers['user-agent'] ? 'Unknown Device' : 'Server/Bot';
+    }
+
+    // Extraer IP limpia sin prefijos ipv6 mappings
+    let ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || req.ip || 'Unknown IP';
+    if (ip.startsWith('::ffff:')) ip = ip.substring(7);
+    if (ip === '::1') ip = '127.0.0.1';
+
+    console.log(`${dateStr} - ${deviceStr.trim()} - ${ip}: ${req.url}`);
+
+    next();
+});
 
 // Serve static files from the current directory (the frontend)
 app.use(express.static(__dirname));

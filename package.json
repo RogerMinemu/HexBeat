@@ -15,6 +15,7 @@
     "cors": "^2.8.6",
     "express": "^5.2.1",
     "play-dl": "^1.9.7",
+    "ua-parser-js": "^2.0.9",
     "youtube-dl-exec": "^3.1.3"
   }
 }
