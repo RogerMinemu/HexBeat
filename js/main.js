@@ -3,18 +3,25 @@
  */
 import { Game } from './game.js';
 
+window.onerror = function (msg, url, line, col, error) {
+    alert("Global Error: " + msg + "\n" + url + ":" + line);
+};
+
 // Wait for DOM
 window.addEventListener('DOMContentLoaded', () => {
-    const canvas = document.getElementById('game-canvas');
+    try {
+        const canvas = document.getElementById('game-canvas');
+        if (!canvas) {
+            alert('Canvas element not found!');
+            return;
+        }
 
-    if (!canvas) {
-        console.error('Canvas element not found!');
-        return;
+        // Create game instance
+        const game = new Game(canvas);
+
+        console.log('🎮 HexBeat initialized!');
+    } catch (e) {
+        alert("Startup Error: " + e.message + "\n" + e.stack);
+        console.error(e);
     }
-
-    // Create game instance
-    const game = new Game(canvas);
-
-    console.log('🎮 HexBeat initialized!');
-    console.log('Upload an MP3 or OGG file to start playing.');
 });

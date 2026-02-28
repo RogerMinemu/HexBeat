@@ -4,55 +4,83 @@
 
 export class UI {
     constructor() {
-        // Screens
-        this.menuScreen = document.getElementById('menu-screen');
-        this.loadingScreen = document.getElementById('loading-screen');
-        this.hud = document.getElementById('hud');
-        this.gameoverScreen = document.getElementById('gameover-screen');
+        try {
+            // Screens
+            this.menuScreen = document.getElementById('menu-screen');
+            this.loadingScreen = document.getElementById('loading-screen');
+            this.hud = document.getElementById('hud');
+            this.gameoverScreen = document.getElementById('gameover-screen');
 
-        // Loading elements
-        this.loadingBar = document.getElementById('loading-bar');
-        this.loadingInfo = document.getElementById('loading-info');
+            // Loading elements
+            this.loadingBar = document.getElementById('loading-bar');
+            this.loadingInfo = document.getElementById('loading-info');
 
-        // HUD elements
-        this.hudTime = document.getElementById('hud-time');
-        this.hudBpm = document.getElementById('hud-bpm');
-        this.hudBestTime = document.getElementById('hud-best-time');
+            // HUD elements
+            this.hudTime = document.getElementById('hud-time');
+            this.hudBpm = document.getElementById('hud-bpm');
+            this.hudBestTime = document.getElementById('hud-best-time');
 
-        // Game over elements
-        this.gameoverTime = document.getElementById('gameover-time');
-        this.gameoverBestContainer = document.getElementById('gameover-best-container');
-        this.gameoverBest = document.getElementById('gameover-best');
-        this.gameoverNewRecord = document.getElementById('gameover-new-record');
+            // Game over elements
+            this.gameoverTime = document.getElementById('gameover-time');
+            this.gameoverBestContainer = document.getElementById('gameover-best-container');
+            this.gameoverBest = document.getElementById('gameover-best');
+            this.gameoverNewRecord = document.getElementById('gameover-new-record');
 
-        // Upload zone
-        this.uploadZone = document.getElementById('upload-zone');
-        this.audioInput = document.getElementById('audio-input');
+            // Upload zone
+            this.uploadZone = document.getElementById('upload-zone');
+            this.audioInput = document.getElementById('audio-input');
 
-        // YouTube zone
-        this.youtubeInput = document.getElementById('youtube-input');
-        this.btnYoutube = document.getElementById('btn-youtube');
+            // YouTube zone
+            this.youtubeInput = document.getElementById('youtube-input');
+            this.btnYoutube = document.getElementById('btn-youtube');
 
-        // Buttons
-        this.btnRetry = document.getElementById('btn-retry');
-        this.btnNewSong = document.getElementById('btn-new-song');
-        this.btnContinue = document.getElementById('btn-continue');
-        this.btnFullscreen = document.getElementById('btn-fullscreen');
+            // Buttons
+            this.btnRetry = document.getElementById('btn-retry');
+            this.btnNewSong = document.getElementById('btn-new-song');
+            this.btnContinue = document.getElementById('btn-continue');
+            this.btnFullscreen = document.getElementById('btn-fullscreen');
 
-        // Song library
-        this.songLibrary = document.getElementById('song-library');
-        this.songList = document.getElementById('song-list');
+            // Song library
+            this.songLibrary = document.getElementById('song-library');
+            this.songList = document.getElementById('song-list');
 
-        // Callbacks
-        this.onFileSelected = null;
-        this.onSongSelected = null; // called with (url, title)
-        this.onYoutubeSelected = null; // called with (youtubeUrl)
-        this.onRetry = null;
-        this.onNewSong = null;
-        this.onContinue = null;
+            // Auth UI
+            this.btnLoginGoogle = document.getElementById('btn-login-google');
+            this.btnLogout = document.getElementById('btn-logout');
+            this.userProfile = document.getElementById('user-profile');
+            this.userAvatar = document.getElementById('user-avatar');
+            this.userName = document.getElementById('user-name');
 
-        this._setupEvents();
-        this._loadSongLibrary();
+            // Community UI
+            this.btnOpenCommunityModal = document.getElementById('btn-open-community-modal');
+            this.communityModal = document.getElementById('community-modal');
+            this.btnCloseCommunityModal = document.getElementById('btn-close-community-modal');
+            this.communityUploadForm = document.getElementById('community-upload-form');
+            this.communityAudioInput = document.getElementById('community-audio-input');
+            this.communitySongTitle = document.getElementById('community-song-title');
+            this.communityUploaderName = document.getElementById('community-uploader-name');
+            this.communityUploadError = document.getElementById('community-upload-error');
+            this.communitySongList = document.getElementById('community-song-list');
+
+            console.log("[UI] All DOM elements queried.");
+
+            // Callbacks
+            this.onFileSelected = null;
+            this.onSongSelected = null; // called with (url, title)
+            this.onYoutubeSelected = null; // called with (youtubeUrl)
+            this.onRetry = null;
+            this.onNewSong = null;
+            this.onContinue = null;
+            this.onLoginWithGoogle = null;
+            this.onLogout = null;
+            this.onCommunityUpload = null; // (file, title)
+
+            this._setupEvents();
+            this._loadSongLibrary();
+        } catch (error) {
+            console.error("[UI Constructor Error]", error);
+            alert("UI Constructor Error: " + error.message);
+        }
     }
 
     async _loadSongLibrary() {
@@ -68,27 +96,50 @@ export class UI {
             // Show library section
             this.songLibrary.style.display = '';
 
-            // Render song items
-            this.songList.innerHTML = '';
-            for (const song of valid) {
-                const item = document.createElement('div');
-                item.className = 'song-item';
-                item.innerHTML = `
-                    <div class="song-icon">🎵</div>
-                    <div class="song-info">
-                        <div class="song-title">${song.title || song.file}</div>
-                        <div class="song-artist">${song.artist || 'Desconocido'}</div>
-                    </div>
-                `;
-                item.addEventListener('click', () => {
-                    const url = `songs/${song.file}`;
-                    this.onSongSelected?.(url, song.title || song.file);
-                });
-                this.songList.appendChild(item);
+            // Separate into official and community
+            const officialSongs = valid.filter(s => !s.community);
+            const communitySongs = valid.filter(s => s.community);
+
+            // Render official songs
+            if (this.songList) {
+                this.songList.innerHTML = '';
+                for (const song of officialSongs) {
+                    const item = this._createSongItemDOM(song);
+                    this.songList.appendChild(item);
+                }
             }
+
+            // Render community songs
+            if (this.communitySongList) {
+                this.communitySongList.innerHTML = '';
+                for (const song of communitySongs) {
+                    const item = this._createSongItemDOM(song);
+                    this.communitySongList.appendChild(item);
+                }
+            }
+
         } catch (e) {
             // No songs.json found or invalid — just hide the library
+            console.error("Error loading song library:", e);
         }
+    }
+
+    _createSongItemDOM(song) {
+        const item = document.createElement('div');
+        item.className = 'song-item';
+        const isCommunity = song.community ? '<span class="community-badge" style="font-size: 0.7em; background: rgba(0, 240, 255, 0.2); padding: 2px 6px; border-radius: 10px; margin-left: 8px; color: var(--cyan);">Comunidad</span>' : '';
+        item.innerHTML = `
+            <div class="song-icon">🎵</div>
+            <div class="song-info">
+                <div class="song-title">${song.title || song.file} ${isCommunity}</div>
+                <div class="song-artist">${song.artist || 'Desconocido'}</div>
+            </div>
+        `;
+        item.addEventListener('click', () => {
+            const url = `songs/${song.file}`;
+            this.onSongSelected?.(url, song.title || song.file);
+        });
+        return item;
     }
 
     _setupEvents() {
@@ -159,6 +210,46 @@ export class UI {
                 }
             });
         }
+
+        // Auth Events
+        if (this.btnLoginGoogle) this.btnLoginGoogle.addEventListener('click', () => this.onLoginWithGoogle?.());
+        if (this.btnLogout) this.btnLogout.addEventListener('click', () => this.onLogout?.());
+
+        // Community Modal Events
+        if (this.btnOpenCommunityModal) {
+            this.btnOpenCommunityModal.addEventListener('click', () => {
+                this.communityModal.classList.remove('hidden');
+                this.communityModal.classList.add('active');
+                this.communityUploadError.style.display = 'none';
+            });
+        }
+        if (this.btnCloseCommunityModal) {
+            this.btnCloseCommunityModal.addEventListener('click', () => {
+                this.communityModal.classList.remove('active');
+                this.communityModal.classList.add('hidden');
+                this.communityUploadForm.reset();
+            });
+        }
+
+        if (this.communityUploadForm) {
+            this.communityUploadForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const file = this.communityAudioInput.files[0];
+                const title = this.communitySongTitle.value.trim();
+                const tos = document.getElementById('community-tos').checked;
+
+                if (!file || !title || !tos) return;
+
+                // Validate size (30MB)
+                const MAX_SIZE = 30 * 1024 * 1024;
+                if (file.size > MAX_SIZE) {
+                    this.showCommunityError('El archivo excede los 30MB permitidos.');
+                    return;
+                }
+
+                this.onCommunityUpload?.(file, title);
+            });
+        }
     }
 
     showScreen(name) {
@@ -173,6 +264,50 @@ export class UI {
             case 'hud': this.hud.classList.add('active'); break;
             case 'gameover': this.gameoverScreen.classList.add('active'); break;
         }
+
+        // Only show auth/user-profile section on menu screen
+        const topBar = document.querySelector('.top-bar .auth-section');
+        if (topBar) {
+            topBar.style.display = name === 'menu' ? '' : 'none';
+        }
+    }
+
+    updateAuthState(user) {
+        if (user) {
+            if (this.btnLoginGoogle) this.btnLoginGoogle.classList.add('hidden');
+            if (this.userProfile) this.userProfile.classList.remove('hidden');
+            if (this.userAvatar) this.userAvatar.src = user.photoURL || '';
+            if (this.userName) this.userName.textContent = user.displayName || 'Usuario';
+            if (this.communityUploaderName) this.communityUploaderName.textContent = user.displayName || 'Usuario';
+
+            // Show upload button
+            if (this.btnOpenCommunityModal) {
+                this.btnOpenCommunityModal.classList.remove('btn-hidden');
+            }
+        } else {
+            if (this.btnLoginGoogle) this.btnLoginGoogle.classList.remove('hidden');
+            if (this.userProfile) this.userProfile.classList.add('hidden');
+
+            // Hide upload button
+            if (this.btnOpenCommunityModal) {
+                this.btnOpenCommunityModal.classList.add('btn-hidden');
+            }
+        }
+    }
+
+    showCommunityError(msg) {
+        if (this.communityUploadError) {
+            this.communityUploadError.textContent = msg;
+            this.communityUploadError.style.display = 'block';
+        }
+    }
+
+    closeCommunityModal() {
+        if (this.communityModal) {
+            this.communityModal.classList.remove('active');
+            this.communityModal.classList.add('hidden');
+        }
+        if (this.communityUploadForm) this.communityUploadForm.reset();
     }
 
     updateLoading(message, percent) {

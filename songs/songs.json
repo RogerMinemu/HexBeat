@@ -18,5 +18,19 @@
         "title": "Minemi's Light",
         "file": "Minemi's Light.mp3",
         "artist": "RogerMinemu"
+    },
+    {
+        "title": "Cursed Valentine Labyrinth",
+        "file": "CursedValentineLabyrinth1-1772303185242-660344342.mp3",
+        "artist": "Comunidad",
+        "community": true,
+        "uploadTime": "2026-02-28T18:26:25.266Z"
+    },
+    {
+        "title": "Morning Blocks - Minemu SMP",
+        "file": "MorningBlocks-1772303377237-986052138.mp3",
+        "artist": "Roger lebron serra",
+        "community": true,
+        "uploadTime": "2026-02-28T18:29:37.261Z"
     }
 ]

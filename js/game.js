@@ -9,6 +9,7 @@ import { WallSystem } from './walls.js';
 import { ParticleSystem } from './particles.js';
 import { LevelGenerator } from './levelGenerator.js';
 import { UI } from './ui.js';
+import { firebaseManager } from './firebase.js';
 
 const YOUTUBE_PROXY_URL = window.location.origin;
 
@@ -82,6 +83,29 @@ export class Game {
         this.ui.onRetry = () => this._onRetry();
         this.ui.onNewSong = () => this._onNewSong();
         this.ui.onContinue = () => this._onContinue();
+
+        // Auth & Community UI Callbacks
+        firebaseManager.onUserChanged((user) => {
+            this.ui.updateAuthState(user);
+        });
+
+        this.ui.onLoginWithGoogle = async () => {
+            try {
+                await firebaseManager.loginWithGoogle();
+            } catch (error) {
+                console.error("Login failed:", error);
+            }
+        };
+
+        this.ui.onLogout = async () => {
+            try {
+                await firebaseManager.logout();
+            } catch (error) {
+                console.error("Logout failed:", error);
+            }
+        };
+
+        this.ui.onCommunityUpload = (file, title) => this._uploadCommunitySong(file, title);
 
         // W key to continue
         window.addEventListener('keydown', (e) => {
@@ -476,5 +500,55 @@ export class Game {
 
     _render() {
         this.renderer.render();
+    } // end of class
+
+    // --- Community Upload ---
+    async _uploadCommunitySong(file, title) {
+        if (!firebaseManager.currentUser) {
+            this.ui.showCommunityError("Debes iniciar sesión para subir una canción.");
+            return;
+        }
+
+        const btnSubmit = document.getElementById('btn-submit-community');
+        btnSubmit.disabled = true;
+        btnSubmit.textContent = "Subiendo...";
+        this.ui.communityUploadError.style.display = 'none';
+
+        try {
+            const token = await firebaseManager.getAuthToken();
+
+            const formData = new FormData();
+            formData.append('audioFile', file);
+            formData.append('title', title);
+
+            // Añadir el nombre del usuario logeado como artista
+            const uploaderName = firebaseManager.currentUser.displayName || "Usuario Anónimo";
+            formData.append('artist', uploaderName);
+
+            const response = await fetch('/upload-community', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                },
+                body: formData
+            });
+
+            if (!response.ok) {
+                const errData = await response.json();
+                throw new Error(errData.error || "No se pudo subir la pista.");
+            }
+
+            // Success
+            this.ui.closeCommunityModal();
+            // Refresh community song list
+            await this.ui._loadSongLibrary();
+            alert("¡Canción publicada en la Comunidad con éxito!");
+
+        } catch (error) {
+            this.ui.showCommunityError(error.message);
+        } finally {
+            btnSubmit.disabled = false;
+            btnSubmit.textContent = "Subir";
+        }
     }
 }
