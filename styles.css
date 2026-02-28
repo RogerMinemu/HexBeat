@@ -720,3 +720,238 @@ screen and (max-width: 600px) {
         margin-top: 10px;
     }
 }
+
+/* ============================================
+   Autenticación & Comunidad
+   ============================================ */
+
+/* Top Bar */
+.top-bar {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    right: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    z-index: 100;
+}
+
+.auth-section {
+    display: flex;
+    align-items: center;
+}
+
+.btn-google {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: white;
+    color: #333;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    font-family: var(--font-body);
+    font-weight: 600;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.btn-google:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.4);
+}
+
+.btn-google.hidden {
+    display: none !important;
+}
+
+.user-profile {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: rgba(10, 10, 20, 0.7);
+    padding: 6px 16px 6px 6px;
+    border-radius: 30px;
+    border: 1px solid rgba(0, 240, 255, 0.3);
+    backdrop-filter: blur(10px);
+}
+
+.user-profile.hidden {
+    display: none !important;
+}
+
+#user-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 1px solid var(--cyan);
+}
+
+#user-name {
+    font-weight: 600;
+    color: var(--cyan);
+    font-size: 0.9rem;
+}
+
+.btn-logout {
+    background: transparent;
+    border: none;
+    color: var(--text-dim);
+    cursor: pointer;
+    padding: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: color 0.2s, background 0.2s;
+}
+
+.btn-logout:hover {
+    color: var(--magenta);
+    background: rgba(255, 0, 170, 0.1);
+}
+
+/* Community Upload Modal */
+.glass-panel {
+    background: var(--bg-card);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.7);
+    border-radius: 12px;
+}
+
+.modal-content {
+    width: 90%;
+    max-width: 500px;
+    padding: 30px;
+}
+
+.modal-title {
+    color: var(--cyan);
+    font-family: var(--font-display);
+    font-size: 1.5rem;
+    margin-bottom: 10px;
+    text-shadow: 0 0 10px rgba(0, 240, 255, 0.4);
+}
+
+.modal-desc {
+    color: var(--text-dim);
+    font-size: 0.95rem;
+    margin-bottom: 25px;
+    line-height: 1.4;
+}
+
+.form-group {
+    text-align: left;
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    color: var(--text);
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.form-group input[type="text"] {
+    width: 100%;
+    padding: 10px 14px;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(0, 240, 255, 0.3);
+    border-radius: 6px;
+    color: white;
+    font-family: var(--font-body);
+    font-size: 1rem;
+}
+
+.form-group input[type="text"]:focus {
+    outline: none;
+    border-color: var(--cyan);
+    box-shadow: 0 0 10px rgba(0, 240, 255, 0.2);
+}
+
+.form-group input[type="file"] {
+    width: 100%;
+    padding: 8px;
+    font-size: 0.9rem;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 6px;
+    color: var(--text-dim);
+}
+
+.form-checkbox {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    margin-bottom: 25px;
+    text-align: left;
+}
+
+.form-checkbox input {
+    margin-top: 4px;
+    cursor: pointer;
+}
+
+.form-checkbox label {
+    font-size: 0.8rem;
+    color: var(--text-dim);
+    line-height: 1.4;
+    cursor: pointer;
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 15px;
+}
+
+.btn-secondary {
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: var(--text);
+}
+
+.btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.dmca-notice {
+    font-size: 0.75rem;
+    color: #555577;
+}
+
+.btn-community {
+    background: linear-gradient(45deg, rgba(0, 240, 255, 0.1), rgba(255, 0, 170, 0.1));
+    border: 1px solid rgba(0, 240, 255, 0.3);
+    color: var(--text);
+    width: 100%;
+    margin-bottom: 15px;
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    font-weight: 600;
+}
+
+.btn-community:hover {
+    border-color: var(--cyan);
+    box-shadow: 0 0 15px rgba(0, 240, 255, 0.2);
+}
+
+.btn-hidden {
+    display: none !important;
+}
+
+.mt-4 {
+    margin-top: 30px;
+}
+
+.form-error {
+    color: #ff4444;
+    font-size: 0.85rem;
+    margin-top: 15px;
+    display: none;
+}
