@@ -37,6 +37,7 @@ export class UI {
         this.btnRetry = document.getElementById('btn-retry');
         this.btnNewSong = document.getElementById('btn-new-song');
         this.btnContinue = document.getElementById('btn-continue');
+        this.btnFullscreen = document.getElementById('btn-fullscreen');
 
         // Song library
         this.songLibrary = document.getElementById('song-library');
@@ -143,6 +144,21 @@ export class UI {
         this.btnRetry.addEventListener('click', () => this.onRetry?.());
         this.btnNewSong.addEventListener('click', () => this.onNewSong?.());
         this.btnContinue.addEventListener('click', () => this.onContinue?.());
+
+        // Fullscreen logic
+        if (this.btnFullscreen) {
+            this.btnFullscreen.addEventListener('click', () => {
+                if (!document.fullscreenElement) {
+                    document.documentElement.requestFullscreen().catch(e => {
+                        console.warn(`Error attempting to enable fullscreen: ${e.message}`);
+                    });
+                } else {
+                    if (document.exitFullscreen) {
+                        document.exitFullscreen();
+                    }
+                }
+            });
+        }
     }
 
     showScreen(name) {
