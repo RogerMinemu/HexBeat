@@ -17,7 +17,13 @@ export class AudioManager {
         this.bpm = 120;
         this.energyMap = []; // [{time, bass, mid, treble, total}]
         this.beatTimes = []; // seconds where beats occur
+        this.melodyOnsets = []; // [{time, intensity}] — melodic note onsets
         this.duration = 0;
+
+        // Real-time melody flux detection
+        this._prevMidTreble = 0;
+        this._melodyFluxHistory = new Float32Array(8); // rolling buffer
+        this._melodyFluxIdx = 0;
 
         // Real-time data
         this.freqData = null;
@@ -73,6 +79,9 @@ export class AudioManager {
 
         onProgress?.('Detectando BPM...', 70);
         this._detectBPM();
+
+        onProgress?.('Detectando melodía...', 85);
+        this._detectMelodyOnsets();
 
         onProgress?.('Generando nivel...', 90);
         this._detectBeats();
@@ -350,5 +359,98 @@ export class AudioManager {
             return this.energyMap[idx];
         }
         return this.energyMap[this.energyMap.length - 1];
+    }
+
+    /**
+     * Pre-analysis: detect melodic note onsets via spectral flux in mid+treble bands.
+     * Produces this.melodyOnsets = [{time, intensity}]
+     */
+    _detectMelodyOnsets() {
+        this.melodyOnsets = [];
+        if (this.energyMap.length < 3) return;
+
+        // Compute spectral flux of mid+treble energy (positive differences only)
+        const flux = [];
+        for (let i = 1; i < this.energyMap.length; i++) {
+            const prev = this.energyMap[i - 1];
+            const curr = this.energyMap[i];
+            // Only positive flux (new energy appearing, not decaying)
+            const df = Math.max(0, (curr.mid + curr.treble) - (prev.mid + prev.treble));
+            flux.push({ time: curr.time, value: df });
+        }
+
+        // Adaptive threshold: local mean over ~200ms window (8 frames at 25ms hop)
+        const halfWin = 4;
+        const thresholdFactor = 1.8; // onset must be this many times the local average
+        const minCooldown = 0.08;    // minimum 80ms between onsets
+        let lastOnsetTime = -1;
+
+        for (let i = halfWin; i < flux.length - halfWin; i++) {
+            let localSum = 0;
+            for (let j = i - halfWin; j <= i + halfWin; j++) {
+                localSum += flux[j].value;
+            }
+            const localMean = localSum / (halfWin * 2 + 1);
+
+            // Must be a local peak and above adaptive threshold
+            if (flux[i].value > localMean * thresholdFactor &&
+                flux[i].value > flux[i - 1].value &&
+                flux[i].value > flux[i + 1].value &&
+                flux[i].value > 0.02 && // absolute minimum to reject silence
+                flux[i].time - lastOnsetTime > minCooldown) {
+
+                lastOnsetTime = flux[i].time;
+                this.melodyOnsets.push({
+                    time: flux[i].time,
+                    intensity: flux[i].value // will be normalized below
+                });
+            }
+        }
+
+        // Normalize intensities to 0-1
+        if (this.melodyOnsets.length > 0) {
+            const maxIntensity = Math.max(...this.melodyOnsets.map(o => o.intensity), 0.001);
+            for (const o of this.melodyOnsets) {
+                o.intensity /= maxIntensity;
+            }
+        }
+    }
+
+    /**
+     * Real-time melody flux: returns 0-1 representing how much mid+treble energy
+     * is currently rising compared to the recent average. Useful for frame-by-frame
+     * reactivity beyond the pre-computed onsets.
+     */
+    getMelodyFlux() {
+        if (!this.freqData) return 0;
+
+        const binCount = this.analyser.frequencyBinCount;
+        const midStart = Math.floor(binCount * 0.06);  // ~250Hz
+        const trebleEnd = Math.floor(binCount * 0.6);   // ~6kHz (melodic range)
+
+        let sum = 0;
+        for (let i = midStart; i < trebleEnd; i++) {
+            sum += this.freqData[i];
+        }
+        const current = sum / ((trebleEnd - midStart) * 255);
+
+        // Positive flux only
+        const flux = Math.max(0, current - this._prevMidTreble);
+        this._prevMidTreble = current;
+
+        // Store in rolling buffer for adaptive threshold
+        this._melodyFluxHistory[this._melodyFluxIdx % this._melodyFluxHistory.length] = flux;
+        this._melodyFluxIdx++;
+
+        // Average of recent flux values
+        let avg = 0;
+        for (let i = 0; i < this._melodyFluxHistory.length; i++) {
+            avg += this._melodyFluxHistory[i];
+        }
+        avg /= this._melodyFluxHistory.length;
+
+        // Return normalized: how much current flux exceeds average (clamped 0-1)
+        if (avg < 0.001) return Math.min(flux * 10, 1);
+        return Math.min(flux / (avg * 2), 1);
     }
 }

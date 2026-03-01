@@ -365,8 +365,9 @@ export class Renderer3D {
         // === WAVEFORM VISUALIZER UPDATE ===
         this._updateWaveform(gameTime, audioData, freqData, timeData, primaryColor, secondaryColor);
 
-        // Bloom intensity reacts to bass — high base for neon glow
-        this.bloomPass.strength = 1.0 + bass * 2.0;
+        // Bloom intensity reacts to bass + melody mid/treble — high base for neon glow
+        const melodyBoost = Math.max(0, mid + treble - 0.5) * 0.8;
+        this.bloomPass.strength = 1.0 + bass * 2.0 + melodyBoost;
 
         // Chromatic aberration reacts to bass
         this.chromaPass.uniforms.uIntensity.value = 0.001 + bass * 0.008;

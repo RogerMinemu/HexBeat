@@ -16,6 +16,7 @@ class Particle {
         this.life = 0;
         this.maxLife = 0;
         this.size = 1;
+        this.drag = 1.5;
         this.color = new THREE.Color(1, 1, 1);
         this.active = false;
     }
@@ -151,6 +152,57 @@ export class ParticleSystem {
         }
     }
 
+    /**
+     * Melody constellation burst — ethereal particles from center outward.
+     * Slower, longer-lived, and smaller than beat pulses or explosions,
+     * creating a starfield / constellation trail effect.
+     */
+    emitMelodyBurst(intensity, color) {
+        const count = Math.floor(4 + intensity * 10);
+        const baseHSL = {};
+        new THREE.Color(color).getHSL(baseHSL);
+
+        for (let i = 0; i < count; i++) {
+            const p = this._getInactiveParticle();
+            if (!p) break;
+
+            const angle = Math.random() * TWO_PI;
+            const spd = 0.3 + Math.random() * 1.2;
+
+            // Spawn randomly across the visible area
+            p.x = (Math.random() - 0.5) * 20;
+            p.y = (Math.random() - 0.5) * 20;
+            p.z = (Math.random() - 0.5) * 1;
+
+            // Very slow drift
+            p.vx = Math.cos(angle) * spd;
+            p.vy = Math.sin(angle) * spd;
+            p.vz = (Math.random() - 0.5) * 0.3;
+
+            // Long life for trailing constellation effect
+            p.life = 1.5 + Math.random() * 2.0;
+            p.maxLife = p.life;
+
+            // Visible star size
+            p.size = 0.15 + Math.random() * 0.25 + intensity * 0.2;
+
+            // Very low drag so particles float outward like stars
+            p.drag = 0.4;
+
+            // Color: blend from palette hue → white based on intensity
+            // Low intensity = colored, high intensity (peaks) = near-white
+            const hueShift = (Math.random() - 0.5) * 0.12;
+            const saturation = (1 - intensity) * (0.7 + Math.random() * 0.3); // desaturate toward white
+            const lightness = 0.55 + intensity * 0.35 + Math.random() * 0.1;  // brighter at peaks
+            p.color.setHSL(
+                (baseHSL.h + hueShift + 1) % 1,
+                saturation,
+                Math.min(lightness, 1)
+            );
+            p.active = true;
+        }
+    }
+
     update(dt) {
         const positions = this.geometry.attributes.position.array;
         const colors = this.geometry.attributes.color.array;
@@ -175,10 +227,11 @@ export class ParticleSystem {
                 p.y += p.vy * dt;
                 p.z += p.vz * dt;
 
-                // Drag
-                p.vx *= (1 - 1.5 * dt);
-                p.vy *= (1 - 1.5 * dt);
-                p.vz *= (1 - 1.5 * dt);
+                // Drag (per-particle)
+                const dragFactor = 1 - p.drag * dt;
+                p.vx *= dragFactor;
+                p.vy *= dragFactor;
+                p.vz *= dragFactor;
 
                 const lifeRatio = p.life / p.maxLife;
 

@@ -28,6 +28,7 @@ export class Game {
         this.player = new Player(this.renderer.scene);
         this.walls = new WallSystem(this.renderer.scene);
         this.particles = new ParticleSystem(this.renderer.scene, 600);
+        this.melodyParticles = new ParticleSystem(this.renderer.scene, 1200);
         this.levelGen = new LevelGenerator();
         this.ui = new UI();
 
@@ -71,6 +72,10 @@ export class Game {
         // Beat tracking
         this.lastBeatIndex = -1;
         this.beatCooldown = 0;
+
+        // Melody tracking
+        this.lastMelodyIndex = -1;
+        this.melodyCooldown = 0;
 
         // Direction change timer
         this.dirChangeTimer = 0;
@@ -183,12 +188,16 @@ export class Game {
             this.player.update(dt);
             this.walls.update(dt, audioData);
             this.particles.update(dt);
+            this.melodyParticles.update(dt);
 
             // Update wall colors — continuous RGB cycling
             this.walls.setColor(this.renderer.getWallColor());
 
             // Beat detection for particles
             this._handleBeats(currentAudioTime, audioData);
+
+            // Melody detection for constellation particles
+            this._handleMelody(currentAudioTime, audioData);
 
             // Shake decay
             if (this.shakeIntensity > 0) {
@@ -227,11 +236,13 @@ export class Game {
             const idleAudio = { bass: 0, mid: 0, treble: 0, energy: 0 };
             this.renderer.update(dt, this.gameTime, idleAudio, null, null);
             this.particles.update(dt);
+            this.melodyParticles.update(dt);
         } else if (this.state === GameState.GAME_OVER) {
             this.gameTime += dt;
             const idleAudio = { bass: 0, mid: 0, treble: 0, energy: 0 };
             this.renderer.update(dt, this.gameTime, idleAudio, null, null);
             this.particles.update(dt);
+            this.melodyParticles.update(dt);
         }
     }
 
@@ -253,6 +264,25 @@ export class Game {
                 break;
             }
             if (beatTimes[i] > currentAudioTime + 0.1) break;
+        }
+    }
+
+    /**
+     * Bass constellation — emit ethereal particles only during the most intense
+     * moments (drops, climaxes). Uses overall energy + bass combined threshold.
+     */
+    _handleMelody(currentAudioTime, audioData) {
+        this.melodyCooldown -= 1 / 60;
+        if (this.melodyCooldown > 0) return;
+
+        // Use bass directly — simpler and more reliable
+        const bass = audioData.bass;
+
+        if (bass > 0.7) {
+            const intensity = (bass - 0.6) / 0.4; // normalize 0.6-1 → 0-1
+            const color = this.renderer.getSecondaryColor();
+            this.melodyParticles.emitMelodyBurst(intensity, color);
+            this.melodyCooldown = 0.25;
         }
     }
 
@@ -434,6 +464,8 @@ export class Game {
 
         this.lastBeatIndex = -1;
         this.beatCooldown = 0;
+        this.lastMelodyIndex = -1;
+        this.melodyCooldown = 0;
         this.worldRotation = 0;
         this.worldRotationSpeed = 0.3;
         this.worldRotationTarget = 0.3;
@@ -444,6 +476,7 @@ export class Game {
         this.player.mesh.visible = true;
         this.walls.clear();
         this.particles.clear();
+        this.melodyParticles.clear();
         this.levelGen.reset();
 
         this.renderer.camera.position.x = 0;
@@ -470,6 +503,7 @@ export class Game {
         // Clear all current walls so player doesn't instantly die again
         this.walls.clear();
         this.particles.clear();
+        this.melodyParticles.clear();
         this.shakeIntensity = 0;
 
         // Show player again
@@ -493,6 +527,7 @@ export class Game {
         this.player.mesh.visible = true;
         this.walls.clear();
         this.particles.clear();
+        this.melodyParticles.clear();
         this.worldRotationGroup.rotation.z = 0;
         this.audioInput?.value && (this.audioInput.value = '');
         this.ui.showScreen('menu');
